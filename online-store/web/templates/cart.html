@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кошик</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        header { background-color: #333; color: white; padding: 1rem; text-align: center; }
+        main { padding: 2rem; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { border: 1px solid #ddd; padding: 1rem; text-align: left; }
+        th { background-color: #f2f2f2; }
+        img {
+            height: 200px;
+            object-fit: cover;
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Кошик</h1>
+    </header>
+    <main>
+        <h2>Ваш кошик</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Назва</th>
+                    <th></th>
+                    <th>Ціна за одиницю</th>
+                    <th>Кількість</th>
+                    <th>Загальна ціна</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Items}}
+                <tr id="cart-item-{{.ProductID}}">
+                    <td>{{.Name}}</td>
+                    <td><img src={{.Image}} alt="products"></a></td>
+                    <td>{{.Price}}</td>
+                    <td>
+                        <input type="number" value="{{.Quantity}}" onchange="updateCartItem('{{.ProductID}}')" />
+                    </td>
+                    <td id="totalPrice-{{.ProductID}}">{{.TotalPrice}}</td>
+                    
+                    <td>
+                        <button onclick="deleteCartItem('{{.ProductID}}')">Видалити</button>
+                    </td>
+                </tr>
+                
+                {{end}}
+            </tbody>
+        </table>
+        <h3 id="cartTotalPrice">Загальна сума: {{.TotalPrice}}</h3>
+
+        <!-- Форма для оформлення замовлення -->
+        <form id="checkoutForm">
+            <div class="form-group">
+                <label for="fullName">Повне ім'я</label>
+                <input type="text" id="fullName" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" required>
+            </div>
+            <div class="form-group">
+                <label for="phone">Номер телефону</label>
+                <input type="tel" id="phone" required>
+            </div>
+            <div class="form-group">
+                <label for="deliveryMethod">Спосіб доставки</label>
+                <select id="deliveryMethod" required>
+                    <option value="">Оберіть спосіб доставки</option>
+                    <option value="nova_poshta">Нова Пошта</option>
+                    <option value="ukr_poshta">Укрпошта</option>
+                    <option value="pickup">Самовивіз</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="address">Адреса доставки</label>
+                <input type="text" id="address" required>
+            </div>
+            <div class="form-group">
+                <label for="paymentMethod">Спосіб оплати</label>
+                <select id="paymentMethod" required>
+                    <option value="">Оберіть спосіб оплати</option>
+                    <option value="cash">Готівка</option>
+                    <option value="card">Картка при отриманні</option>
+                    <option value="online">Онлайн-оплата</option>
+                </select>
+            </div>
+            <button type="submit">Підтвердити замовлення</button>
+        </form>
+    </main>
+
+    <script>
+        document.getElementById("checkoutForm").addEventListener("submit", async function(event) {
+            event.preventDefault(); // Запобігаємо стандартному відправленню форми
+
+            // Отримуємо значення з форми
+            const orderData = {
+                fullName: document.getElementById("fullName").value,
+                email: document.getElementById("email").value,
+                phone: document.getElementById("phone").value,
+                deliveryMethod: document.getElementById("deliveryMethod").value,
+                address: document.getElementById("address").value,
+                paymentMethod: document.getElementById("paymentMethod").value
+            };
+
+            // Надсилаємо дані форми через fetch як JSON
+            const response = await fetch("/cart/checkout", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(orderData)
+            });
+            if (orderData.paymentMethod === "online") {
+                alert("Ваше замовлення підтверджено. Зараз вас буде перенаправлено на сторінку оплати.");
+                window.location.href = "/payment"; // Перенаправлення на сторінку оплати
+                return;
+            }
+
+            if (response.ok) {
+                alert("Замовлення успішно оформлено!");
+                location.reload(); // Перезавантажити сторінку або перенаправити на іншу
+            } else {
+                alert("Помилка оформлення замовлення.");
+            }
+        });
+        async function updateCartItem(productId) {
+    const quantityInput = document.querySelector(`#cart-item-${productId} input`);
+    const quantity = parseInt(quantityInput.value);
+
+    if (isNaN(quantity) || quantity <= 0) {
+        alert("Будь ласка, введіть коректну кількість!");
+        return;
+    }
+
+    try {
+        const response = await fetch(`/cart/update?id=${productId}&quantity=${quantity}`, {
+            method: "POST",
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+
+            // Показуємо повідомлення, якщо є
+            if (data.message) {
+                alert(data.message);
+            }
+
+            // Оновлення кількості
+            quantityInput.value = data.quantity;
+
+            // Оновлення загальної ціни для товару
+            document.querySelector(`#totalPrice-${productId}`).textContent = data.totalPrice.toFixed(2);
+
+            // Оновлення загальної суми кошика
+            document.querySelector("#cartTotalPrice").textContent = `Загальна сума: ${data.cartTotalPrice.toFixed(2)}`;
+        } else {
+            const errorText = await response.text();
+            alert(`Помилка: ${errorText}`);
+        }
+    } catch (err) {
+        alert("Сталася помилка під час оновлення товару.");
+    }
+}
+
+
+        function updateTotalPrice() {
+            let totalPrice = 0;
+
+            document.querySelectorAll("tbody tr").forEach(row => {
+                const totalCell = row.querySelector("td:nth-child(4)"); // Колонка із загальною ціною товару
+                const totalValue = parseFloat(totalCell.textContent);
+
+                if (!isNaN(totalValue)) {
+                    totalPrice += totalValue;
+                } else {
+                    console.error("Invalid total value in row:", totalCell.textContent);
+                }
+            });
+
+            document.querySelector("h3").textContent = `Загальна сума: ${totalPrice.toFixed(2)}`;
+        }
+        async function deleteCartItem(productId) {
+            try {
+                const response = await fetch(`/cart/delete?id=${productId}`, {
+                    method: "DELETE",
+                });
+
+                if (response.ok) {
+                    // Видаляємо рядок з таблиці
+                    const row = document.getElementById(`cart-item-${productId}`);
+                    row.remove();
+
+                    // Перерахунок загальної суми
+                    const updatedTotalResponse = await fetch('/cart/total', {
+                        method: "GET",
+                    });
+
+                    if (updatedTotalResponse.ok) {
+                        const updatedTotalData = await updatedTotalResponse.json();
+                        document.querySelector("#cartTotalPrice").textContent = `Загальна сума: ${updatedTotalData.cartTotalPrice.toFixed(2)}`;
+                    }
+                } else {
+                    const errorText = await response.text();
+                    alert(`Помилка: ${errorText}`);
+                }
+            } catch (err) {
+                alert("Сталася помилка під час видалення товару");
+            }
+        }
+
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аналітика</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px; }
+        header { text-align: center; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .chart-container { width: 80%; margin: auto; margin-bottom: 20px; }
+        button { padding: 10px 20px; background-color: #28a745; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #218838; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Аналітика</h1>
+        <form action="/analytics/generate" method="POST">
+            <button type="submit">Згенерувати 100 замовлень</button>
+        </form>
+    </header>
+
+    <h2>Статистика</h2>
+    <p>День з найменшою кількістю покупок: <strong>{{.MinPurchaseDay}}</strong></p>
+    <p>День з найбільшою кількістю покупок: <strong>{{.MaxPurchaseDay}}</strong></p>
+    <p>Середній чек: <strong>{{printf "%.2f" .AverageCheck}}</strong> грн</p>
+    <p>Медіанний чек: <strong>{{printf "%.2f" .MedianCheck}}</strong> грн</p>
+    <p>Найбільш часто купується товар: <strong>{{.MostPurchased}}</strong></p>
+
+    <h2>Графіки</h2>
+    <div class="chart-container">
+        <canvas id="dailyPurchasesChart"></canvas>
+    </div>
+
+    <h2>Комбінації товарів</h2>
+    <p>Найчастіше зустрічається комбінація: <strong>{{.MostFrequentCombo}}</strong></p>
+    <p>Найрідше зустрічається комбінація: <strong>{{.LeastFrequentCombo}}</strong></p>
+
+    <script>
+        // Дані для графіка покупок по днях
+        const dailyPurchases = {{.DailyPurchasesJSON}};
+        const ctx = document.getElementById('dailyPurchasesChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(dailyPurchases),
+                datasets: [{
+                    label: 'Кількість покупців',
+                    data: Object.values(dailyPurchases),
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

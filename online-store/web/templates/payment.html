@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Онлайн-оплата</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 2rem; }
+        .btn { padding: 1rem 2rem; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .btn:hover { background-color: #0056b3; }
+        .message { margin-top: 2rem; font-size: 1.2rem; color: green; }
+    </style>
+</head>
+<body>
+    <h1>Онлайн-оплата</h1>
+    <p>Натисніть кнопку нижче для проведення оплати.</p>
+    <button class="btn" id="payButton">Провести оплату</button>
+    <p class="message" id="paymentMessage" style="display: none;">Ваше замовлення оплачене. Очікуйте зворотнього зв’язку.</p>
+
+    <script>
+        document.getElementById("payButton").addEventListener("click", function() {
+            // Змінюємо текст кнопки та показуємо повідомлення
+            this.style.display = "none";
+            document.getElementById("paymentMessage").style.display = "block";
+        });
+    </script>
+</body>
+</html>

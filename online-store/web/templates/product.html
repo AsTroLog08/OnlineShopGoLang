@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Товар</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        header { background-color: #333; color: white; padding: 1rem; text-align: center; }
+        main { padding: 2rem; }
+        .product-container { display: flex; gap: 2rem; }
+        .product-image { flex: 1; }
+        .product-image img { max-width: 100%; height: auto; object-fit: cover; }
+        .product-details { flex: 2; }
+        form { margin-top: 1rem; }
+        input, button { padding: 0.5rem; margin: 0.5rem 0; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Товар</h1>
+    </header>
+    <main>
+        <div class="product-container">
+            <div class="product-image">
+                <img src="{{.Image}}" alt="{{.Name}}">
+            </div>
+            <div class="product-details">
+                <h2>{{.Name}}</h2>
+                <p><strong>Опис:</strong> {{.Description}}</p>
+                <p><strong>Ціна:</strong> {{.Price}} грн</p>
+                <p><strong>На складі:</strong> {{.Stock}}</p>
+
+                <div id="cartInfo"></div>
+                <form id="addToCartForm">
+                    <label>Кількість: <input type="number" id="quantity" min="1" max="{{.Stock}}" value="1" required></label>
+                    <button type="submit">Додати в кошик</button>
+                </form>
+            </div>
+        </div>
+    </main>
+    <script>
+        // Перевірка чи товар вже в кошику
+        async function checkCartStatus() {
+            const response = await fetch(`/cart/status?id={{.ID}}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.inCart) {
+                    document.getElementById('cartInfo').innerText = `Товар вже в кошику. Кількість: ${data.quantity}`;
+                    document.getElementById('addToCartForm').style.display = 'none';
+                }
+            }
+        }
+
+        // Додавання товару в кошик
+        document.getElementById('addToCartForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const quantity = parseInt(document.getElementById('quantity').value);
+            const response = await fetch(`/cart/add?id={{.ID}}&quantity=${quantity}`, { method: 'POST' });
+            if (response.ok) {
+                alert('Товар додано до кошика!');
+                location.reload();
+            } else {
+                alert('Помилка додавання до кошика.');
+            }
+        };
+
+        // Виклик функції перевірки
+        checkCartStatus();
+    </script>
+</body>
+</html>
